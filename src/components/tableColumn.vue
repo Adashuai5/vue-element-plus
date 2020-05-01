@@ -40,6 +40,10 @@ export default {
       TABLE_DATA_MAP
     };
   },
+  mounted() {
+    console.log(this.currentTableData);
+    console.log(this.currentTableData[this.tableName]);
+  },
   computed: {
     // currentTableData 实际工作中应该是保存在后端的值
     currentTableData() {

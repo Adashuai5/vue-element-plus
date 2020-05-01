@@ -8,6 +8,9 @@ export default new Vuex.Store({
     currentTableData: {}
   },
   mutations: {
+    SET_TABLE_DATA(state, { type, data }) {
+      state.currentTableData[type] = data
+    }
   },
   actions: {
   },
