@@ -1,8 +1,14 @@
 <template>
   <div>
-    <el-button style="margin-bottom:10px;" type="primary" @click="dialogs.configuration.show=true">列表配置</el-button>
+    <el-button
+      style="margin-bottom:10px;"
+      type="primary"
+      @click="dialogs.configuration.show=true"
+    >列表配置</el-button>
+    <el-button style="margin-bottom:10px;" type="primary" @click="doExportExcel">导出数据(DOM)</el-button>
+    <el-button style="margin-bottom:10px;" type="primary" @click="doExport2Excel">导出数据(E2E)</el-button>
     <el-table
-      class="table"
+      id="table-data"
       :data="tableData"
       border
       show-summary
@@ -11,7 +17,7 @@
       style="width: 100%"
     >
       <el-table-column prop="id" label="ID" width="120" fixed="left"></el-table-column>
-      <table-column tableName="tableDemo" v-if='tableData.length'></table-column>
+      <table-column tableName="tableDemo" v-if="tableData.length"></table-column>
     </el-table>
     <el-dialog
       :title="dialogs.configuration.title"
@@ -30,6 +36,7 @@
 </template>
 <script>
 import { TABLE_DATA_MAP } from "@/utils/tableData";
+import { exportExcelByDom, export_json_to_excel } from "@/utils/Export2Excel";
 const tableData = [
   {
     id: "12987122",
@@ -127,8 +134,8 @@ export default {
     transfer: () => import("@/components/transfer"),
     "table-column": () => import("@/components/tableColumn")
   },
-  mounted(){
-    this.getList()
+  mounted() {
+    this.getList();
   },
   methods: {
     getList() {
@@ -167,14 +174,46 @@ export default {
       });
       return sums;
     },
+    doExportExcel() {
+      const excel = exportExcelByDom("table-data", "导出数据.xlsx");
+      if (excel) {
+        this.$notify.success("导出成功！");
+      }
+    },
+    doExport2Excel() {
+      const tHeader = ["ID"];
+      const keyArray = ["id"];
+      this.TABLE_DATA_MAP.tableDemo.forEach(item => {
+        tHeader.push(item.label);
+        keyArray.push(item.key);
+      });
+      // 这里 jsonData 应该是所要导出的所有数据，可让后端传值
+      const jsonData = this.tableData;
+      jsonData.forEach(list => {
+        this.TABLE_DATA_MAP.tableDemo.forEach(keyObject => {
+          if (keyObject.isPercent && keyObject.isPercent === true) {
+            list[keyObject.key] = this.toPercent(
+              list[keyObject.molecule],
+              list[keyObject.denominator]
+            );
+          } else if (keyObject.isFixedTwo && keyObject.isFixedTwo === true) {
+            list[keyObject.key] = this.toFixedTwo(
+              list[keyObject.molecule],
+              list[keyObject.denominator]
+            );
+          }
+        });
+      });
+      export_json_to_excel(tHeader, keyArray, jsonData, "数据导出");
+    },
     editSuc(obj) {
       this.dialogs[obj].show = false;
       this.$message({
         message: "提交成功",
         type: "success"
       });
-      this.tableData = []
-      this.getList()
+      this.tableData = [];
+      this.getList();
     }
   }
 };
