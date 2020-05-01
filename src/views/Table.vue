@@ -6,6 +6,7 @@
       :data="tableData"
       border
       show-summary
+      :summary-method="getSummaries"
       highlight-current-row
       style="width: 100%"
     >
@@ -28,9 +29,11 @@
   </div>
 </template>
 <script>
+import { TABLE_DATA_MAP } from "@/utils/tableData";
 export default {
   data() {
     return {
+      TABLE_DATA_MAP,
       tableData: [
         {
           id: "12987122",
@@ -103,6 +106,13 @@ export default {
           amount5: 12
         }
       ],
+      totalData: {
+        amount1: 1883,
+        amount2: 15.83,
+        amount3: 63,
+        amount4: 22.15,
+        amount5: 60
+      },
       dialogs: {
         field: {
           title: "动态列表配置",
@@ -117,30 +127,35 @@ export default {
     "table-column": () => import("@/components/tableColumn")
   },
   methods: {
-    getSummaries(param) {
-      const { columns, data } = param;
-      const sums = [];
+    getSummaries({ columns }) {
+      let sums = [];
       columns.forEach((column, index) => {
-        if (index === 0) {
-          sums[index] = "总价";
+        if (column.property === "id") {
+          sums[index] = "合计";
           return;
-        }
-        const values = data.map(item => Number(item[column.property]));
-        if (!values.every(value => isNaN(value))) {
-          sums[index] = values.reduce((prev, curr) => {
-            const value = Number(curr);
-            if (!isNaN(value)) {
-              return prev + curr;
-            } else {
-              return prev;
-            }
-          }, 0);
-          sums[index] += " 元";
         } else {
-          sums[index] = "N/A";
+          this.TABLE_DATA_MAP.tableDemo.forEach(keyObject => {
+            if (keyObject.key.includes(column.property)) {
+              if (keyObject.isPercent && keyObject.isPercent === true) {
+                sums[index] = this.toPercent(
+                  this.totalData[keyObject.molecule],
+                  this.totalData[keyObject.denominator]
+                );
+              } else if (
+                keyObject.isFixedTwo &&
+                keyObject.isFixedTwo === true
+              ) {
+                sums[index] = this.toFixedTwo(
+                  this.totalData[keyObject.molecule],
+                  this.totalData[keyObject.denominator]
+                );
+              } else {
+                sums[index] = this.totalData[column.property];
+              }
+            }
+          });
         }
       });
-
       return sums;
     },
     editSuc(obj) {
